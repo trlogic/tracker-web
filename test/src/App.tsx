@@ -13,7 +13,7 @@ class App extends Component {
   }
 
   componentDidMount() {
-    const args = {
+    const args: FormicaTracker.TrackerInitializeArgs = {
       serviceUrl: "https://poc.sentinel.formica.ai",
       tenantName: "master",
       apiKey: "12345"
@@ -21,7 +21,9 @@ class App extends Component {
     FormicaTracker.initialize(args)
       .then(() => {
         console.log("Tracker initialized");
-        //FormicaTracker.triggerCustom("testcustom1", {});
+        FormicaTracker.triggerCustom("testcustom1", {
+          custom1: "test1",
+        });
       })
       .catch((error) => console.error("Tracker could not initialized", error));
   }

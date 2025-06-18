@@ -3,7 +3,7 @@ import {TrackerTriggerTypeMobile, TrackerTriggerTypeWeb} from "../TrackerTrigger
 
 interface TrackerTrigger {
   name: string;
-  type: TrackerTriggerTypeMobile|TrackerTriggerTypeWeb;
+  type: TrackerTriggerTypeWeb;
   filters: TrackerFilterJsonModel[];
   option: ClickOption | ScrollOptions | CustomEventOption;
 }

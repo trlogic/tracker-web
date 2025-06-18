@@ -1,6 +1,6 @@
 {
   "name": "@trlogic/tracker-web",
-  "version": "1.0.3",
+  "version": "1.0.5",
   "description": "Formica Tracker Web",
   "exports": {
     ".": {
@@ -36,7 +36,11 @@
     "@rollup/plugin-typescript": "^8.3.2",
     "axios": "^0.26.1",
     "rollup": "^2.75.3",
-    "terser": "^5.14.0"
+    "terser": "^5.14.0",
+    "@fingerprintjs/fingerprintjs": "^4.6.2"
+  },
+  "peerDependencies": {
+    "@fingerprintjs/fingerprintjs": "^4.6.2"
   },
   "devDependencies": {
     "@types/axios": "^0.14.0",

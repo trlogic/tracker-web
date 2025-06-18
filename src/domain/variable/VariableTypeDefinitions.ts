@@ -11,12 +11,13 @@ export type JavascriptOption = { code: string; }
 export type TriggerOption = { type: TriggerVariableType, option: ElementOption | HistoryOption }
 
 
-
 export enum TrackerVariableWebType {
   URL = "URL",
   ELEMENT = "ELEMENT",
   COOKIE = "COOKIE",
   JAVASCRIPT = "JAVASCRIPT",
   EVENT = "EVENT",
+  IP_ADDRESS = "IP_ADDRESS",
+  DEVICE_FINGERPRINT = "DEVICE_FINGERPRINT",
   CUSTOM = "CUSTOM"
 }

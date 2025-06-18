@@ -17,6 +17,7 @@ import {
 } from "./domain/variable/VariableTypeDefinitions";
 import TrackerEventMapping from "./domain/TrackerEventMapping";
 import {TrackerTriggerTypeWeb} from "./domain/TrackerTriggerType";
+import FingerprintJS from '@fingerprintjs/fingerprintjs';
 
 export type TrackerPayload = { name: string, key: string, variables: Record<string, any> };
 export type TrackerResponse = {
@@ -32,6 +33,8 @@ const trackerConfig: TrackerConfig = {
 }
 
 let timerInstance: any = undefined;
+let ip: string | undefined = undefined;
+let deviceIdFingerPrint: string | undefined = undefined;
 
 const globalVariables: Record<string, any> = {
   viewDuration: 0
@@ -50,6 +53,10 @@ namespace TrackerManager {
     tenantName: string;
     apiKey: string
   };
+
+  export type TrackerRequestConfig = {
+    timeoutMs?: number;
+  }
 
   export const initialize = async (args: TrackerInitializeArgs): Promise<void> => {
     try {
@@ -76,6 +83,8 @@ namespace TrackerManager {
       await getTrackers();
       initClientWorker();
       initTimer();
+      await fetchIp();
+      await getDeviceIdFingerPrint()
       trackerConfig.trackers.forEach(tracker => tracker.triggers.forEach(triggerSchema => initListener(triggerSchema, tracker.variables, tracker.event)));
       return Promise.resolve();
     } catch (e) {
@@ -88,13 +97,14 @@ namespace TrackerManager {
     eventQueue.push(...payloads);
   }
 
-  export const triggerCustomSync = async <T>(payload: TrackerPayload): Promise<T> => {
+  export const triggerCustomSync = async <T>(payload: TrackerPayload, config?: TrackerRequestConfig): Promise<T> => {
     try {
       const response: AxiosResponse<T> = await _axios.post(trackerConfig.apiUrl, payload, {
         headers: {
           "Content-Type": "application/json",
           "tenant": tenant
-        }
+        },
+        timeout: config?.timeoutMs
       });
       return response.data;
     } catch (e: any) {
@@ -119,6 +129,22 @@ namespace TrackerManager {
 }
 
 export default TrackerManager
+
+const fetchIp = async (): Promise<void> => {
+  try {
+    const response = await _axios.get("https://api.ipify.org?format=json");
+    ip = response.data.ip;
+  } catch (e) {
+    console.error("Error fetching IP address:", e);
+    ip = "unknown";
+  }
+}
+
+const getDeviceIdFingerPrint = async (): Promise<void> => {
+  const fp = await FingerprintJS.load();
+  const result = await fp.get();
+  deviceIdFingerPrint = result.visitorId;
+}
 
 const buildCustomTriggerPayloads = (name: string, variables: Record<string, any>) => {
   const payloads: TrackerPayload[] = [];
@@ -257,7 +283,7 @@ const sendEvent = (event: TrackerPayload) => {
 }
 
 //  ******************** CONFIG ********************
-interface TrackerConfig {
+export interface TrackerConfig {
   trackers: TrackerSchema[];
   apiUrl: string
 }
@@ -352,22 +378,26 @@ const calculateFilter = (filter: Filter, variables: Record<string, any>): boolea
 
 const resolveTrackerVariable = (trackerVariableSchema: TrackerVariable, mouseEvent: MouseEvent): string => {
   switch (trackerVariableSchema.type) {
-    case "URL":
+    case TrackerVariableWebType.URL:
       return resolveUrlVariable(trackerVariableSchema as TrackerUrlVariable);
-    case "COOKIE":
+    case TrackerVariableWebType.COOKIE:
       return resolveCookieVariable(trackerVariableSchema as TrackerCookieVariable);
-    case "ELEMENT":
+    case TrackerVariableWebType.ELEMENT:
       return resolveElementVariable(trackerVariableSchema as TrackerElementVariable)
-//    case "VISIBILITY":
-//      return resolveVisibilityVariable(trackerVariableSchema);
-    case "JAVASCRIPT":
+    case TrackerVariableWebType.JAVASCRIPT:
       return resolveJavascriptVariable(trackerVariableSchema as TrackerJavascriptVariable);
-//    case "VIEW_DURATION":
-//      return globalVariables.viewDuration ?? 0;
-    case "EVENT":
+    case TrackerVariableWebType.IP_ADDRESS:
+      return resolveIpAddressVariable();
+    case TrackerVariableWebType.DEVICE_FINGERPRINT:
+      return resolveDeviceFingerPrint()
+    case TrackerVariableWebType.EVENT:
       return resolveTriggerVariable(trackerVariableSchema as TrackerEventVariable, mouseEvent)
     case TrackerVariableWebType.CUSTOM:
       return resolveCustomVariable(trackerVariableSchema as TrackerCustomEventVariable);
+    //    case "VISIBILITY":
+    //      return resolveVisibilityVariable(trackerVariableSchema);
+    //    case "VIEW_DURATION":
+    //      return globalVariables.viewDuration ?? 0;
     default :
       return "";
   }
@@ -430,6 +460,17 @@ const resolveJavascriptVariable = (trackerVariableSchema: TrackerJavascriptVaria
     console.error(error);
     return "";
   }
+}
+
+const resolveIpAddressVariable = (): string => {
+  if (ip == undefined || ip == "unknown") {
+    return "";
+  }
+  return ip;
+}
+
+const resolveDeviceFingerPrint = (): string => {
+  return deviceIdFingerPrint ?? "";
 }
 
 const resolveTriggerVariable = (trackerVariableSchema: TrackerEventVariable, mouseEvent: MouseEvent): string => {
