@@ -1,5 +1,5 @@
 //  ******************** TRACKER  ********************
-import axios, {AxiosInstance, AxiosRequestConfig, AxiosResponse} from "axios";
+import axios, {AxiosInstance, AxiosRequestConfig} from "axios";
 import TrackerSchema from "./domain/TrackerSchema";
 import TrackerTrigger, {ClickOption, CustomEventOption} from "./domain/trigger/TrackerTrigger";
 import TrackerVariable, {
@@ -15,9 +15,10 @@ import {
   TrackerVariableWebType,
   URLSelection,
 } from "./domain/variable/VariableTypeDefinitions";
-import TrackerEventMapping from "./domain/TrackerEventMapping";
 import {TrackerTriggerTypeWeb} from "./domain/TrackerTriggerType";
 import FingerprintJS from '@fingerprintjs/fingerprintjs';
+import {monitorRemoteControlSuspicion, SuspiciousFlags} from "./remote";
+import {TransactionResult} from "./domain/TransactionResult";
 
 export type TrackerPayload = { name: string, key: string, variables: Record<string, any> };
 export type TrackerResponse = {
@@ -45,6 +46,13 @@ let previousHref: string | undefined;
 let tenant: string;
 let serviceUrl: string;
 let apiKey: string;
+
+let suspiciousFlags: SuspiciousFlags = {
+  unnaturalMouseMoves: false,
+  bigClipboardPaste: false,
+  lowFPSDetected: false,
+  delayedClickDetected: false,
+}
 
 namespace TrackerManager {
 
@@ -84,31 +92,37 @@ namespace TrackerManager {
       initClientWorker();
       initTimer();
       await fetchIp();
-      await getDeviceIdFingerPrint()
-      trackerConfig.trackers.forEach(tracker => tracker.triggers.forEach(triggerSchema => initListener(triggerSchema, tracker.variables, tracker.event)));
+      await getDeviceIdFingerPrint();
+      monitorRemoteControlSuspicion((flags) => {
+        suspiciousFlags = {...flags};
+      })
+      trackerConfig.trackers.forEach(tracker => tracker.triggers.forEach(triggerSchema => initListener(triggerSchema, tracker)));
       return Promise.resolve();
     } catch (e) {
       return Promise.reject(e);
     }
   };
 
-  export const triggerCustom = (name: string, variables: Record<string, any>) => {
-    const payloads = buildCustomTriggerPayloads(name, variables);
-    eventQueue.push(...payloads);
+  export const triggerCustom = async (name: string, variables: Record<string, any>) => {
+    const payload = await buildCustomTriggerPayload(name, variables);
+    if (payload) {
+      eventQueue.push(payload);
+    }
   }
 
-  export const triggerCustomSync = async <T>(payload: TrackerPayload, config?: TrackerRequestConfig): Promise<T> => {
+  export const triggerCustomSync = async (name: string, variables: Record<string, any>, config?: TrackerRequestConfig): Promise<TransactionResult | null> => {
     try {
-      const response: AxiosResponse<T> = await _axios.post(trackerConfig.apiUrl, payload, {
+      const payload = await buildCustomTriggerPayload(name, variables);
+      if (!payload) return null;
+      const response = await _axios.post<TransactionResult>(trackerConfig.apiUrl, payload, {
         headers: {
-          "Content-Type": "application/json",
-          "tenant": tenant
+          tenant: tenant
         },
         timeout: config?.timeoutMs
       });
       return response.data;
     } catch (e: any) {
-      throw new Error(e);
+      return null;
     }
   }
 
@@ -146,15 +160,22 @@ const getDeviceIdFingerPrint = async (): Promise<void> => {
   deviceIdFingerPrint = result.visitorId;
 }
 
-const buildCustomTriggerPayloads = (name: string, variables: Record<string, any>) => {
-  const payloads: TrackerPayload[] = [];
+const buildCustomTriggerPayload = async (name: string, variables: Record<string, any>) => {
   for (const tracker of trackerConfig.trackers) {
-    const events = tracker.triggers.filter(t => t.type == TrackerTriggerTypeWeb.CUSTOM && ((t.option as CustomEventOption)?.event == name || t.name == name));
-    if (events.length == 0) continue;
-    const payload = buildEvent(tracker.event, variables);
-    payloads.push(payload);
+    const event = tracker.triggers.find(t => t.type == TrackerTriggerTypeWeb.CUSTOM && ((t.option as CustomEventOption)?.event == name || t.name == name));
+    if (!event) continue;
+    for (const variable of tracker.variables) {
+      if (variable.type == TrackerVariableWebType.CUSTOM) {
+        if (!variables.hasOwnProperty(variable.name)) {
+          variables[variable.name] = await resolveTrackerVariable(variable, new MouseEvent(""));
+        }
+      } else {
+        variables[variable.name] = await resolveTrackerVariable(variable, new MouseEvent(""));
+      }
+    }
+    return buildEvent(tracker, variables)
   }
-  return payloads;
+  return null;
 }
 
 const getTrackers = async () => {
@@ -182,7 +203,6 @@ const initClientWorker = () => {
     const isOnline = window.navigator.onLine;
     if (!isOnline) return;
 
-    const events: TrackerPayload[] = [];
     while (eventQueue.length > 0) {
       if (!isOnline) {
         break;
@@ -213,7 +233,7 @@ const timerHandler = () => {
 
 //  ******************** EVENT HANDLERS  ********************
 
-const initListener = (triggerSchema: TrackerTrigger, trackerVariableSchemas: TrackerVariable[], eventSchema: TrackerEventMapping) => {
+const initListener = (triggerSchema: TrackerTrigger, tracker: TrackerSchema) => {
   switch (triggerSchema.type) {
     case TrackerTriggerTypeWeb.PAGE_VIEW: {
       previousHref = document.location.href;
@@ -222,7 +242,7 @@ const initListener = (triggerSchema: TrackerTrigger, trackerVariableSchemas: Tra
         const observer = new MutationObserver(function (mutations) {
           mutations.forEach(function () {
             if (previousHref !== document.location.href) {
-              eventListenerHandler(e, triggerSchema, trackerVariableSchemas, eventSchema);
+              eventListenerHandler(e, triggerSchema, tracker);
               previousHref = document.location.href;
             }
           });
@@ -237,27 +257,27 @@ const initListener = (triggerSchema: TrackerTrigger, trackerVariableSchemas: Tra
     }
     case TrackerTriggerTypeWeb.CUSTOM: {
       document.addEventListener(triggerSchema.name, (e) => {
-        eventListenerHandler(e, triggerSchema, trackerVariableSchemas, eventSchema)
+        eventListenerHandler(e, triggerSchema, tracker)
       });
       break;
     }
     default: {
       document.addEventListener(triggerSchema.type.toLowerCase(), (e) => {
-        eventListenerHandler(e, triggerSchema, trackerVariableSchemas, eventSchema)
+        eventListenerHandler(e, triggerSchema, tracker)
       });
       break;
     }
   }
 };
 
-const eventListenerHandler = (e: any, triggerSchema: TrackerTrigger, trackerVariableSchemas: TrackerVariable[], eventSchema: TrackerEventMapping) => {
+const eventListenerHandler = async (e: any, triggerSchema: TrackerTrigger, tracker: TrackerSchema) => {
   const trackerVariables: Record<string, any> = {};
-  trackerVariableSchemas.forEach(trackerVariableSchema => {
-    trackerVariables[trackerVariableSchema.name] = resolveTrackerVariable(trackerVariableSchema, e as MouseEvent)
-  });
+  for (const variable of tracker.variables) {
+    trackerVariables[variable.name] = await resolveTrackerVariable(variable, e as MouseEvent)
+  }
   const validated: boolean = validate(e as MouseEvent, triggerSchema);
   if (validated) {
-    const event: TrackerPayload = buildEvent(eventSchema, trackerVariables);
+    const event: TrackerPayload = buildEvent(tracker, trackerVariables);
     sendEvent(event);
   }
 }
@@ -376,7 +396,7 @@ const calculateFilter = (filter: Filter, variables: Record<string, any>): boolea
 
 // -----
 
-const resolveTrackerVariable = (trackerVariableSchema: TrackerVariable, mouseEvent: MouseEvent): string => {
+const resolveTrackerVariable = async (trackerVariableSchema: TrackerVariable, mouseEvent: MouseEvent): Promise<string | number | boolean | Record<string, any> | null> => {
   switch (trackerVariableSchema.type) {
     case TrackerVariableWebType.URL:
       return resolveUrlVariable(trackerVariableSchema as TrackerUrlVariable);
@@ -386,12 +406,24 @@ const resolveTrackerVariable = (trackerVariableSchema: TrackerVariable, mouseEve
       return resolveElementVariable(trackerVariableSchema as TrackerElementVariable)
     case TrackerVariableWebType.JAVASCRIPT:
       return resolveJavascriptVariable(trackerVariableSchema as TrackerJavascriptVariable);
+    case TrackerVariableWebType.EVENT:
+      return resolveTriggerVariable(trackerVariableSchema as TrackerEventVariable, mouseEvent)
     case TrackerVariableWebType.IP_ADDRESS:
       return resolveIpAddressVariable();
     case TrackerVariableWebType.DEVICE_FINGERPRINT:
       return resolveDeviceFingerPrint()
-    case TrackerVariableWebType.EVENT:
-      return resolveTriggerVariable(trackerVariableSchema as TrackerEventVariable, mouseEvent)
+    case TrackerVariableWebType.SUSPICIOUS_ACTIVITY:
+      return resolveSuspiciousActivityVariable();
+    case TrackerVariableWebType.SUSPICIOUS_BROWSER:
+      return isSuspiciousBrowser();
+    case TrackerVariableWebType.LANGUAGE:
+      return navigator.language || (navigator as any).userLanguage || "";
+    case TrackerVariableWebType.TIMEZONE:
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+    case TrackerVariableWebType.OS:
+      return resolveOS()
+    case TrackerVariableWebType.BROWSER:
+      return resolveBrowser();
     case TrackerVariableWebType.CUSTOM:
       return resolveCustomVariable(trackerVariableSchema as TrackerCustomEventVariable);
     //    case "VISIBILITY":
@@ -469,27 +501,59 @@ const resolveIpAddressVariable = (): string => {
   return ip;
 }
 
+const resolveBrowser = (): string | null => {
+  const userAgent = navigator.userAgent;
+  if (/Edg/i.test(userAgent)) return 'Edge';
+  if (/OPR|Opera/i.test(userAgent)) return 'Opera';
+  if (/Chrome/i.test(userAgent)) return 'Chrome';
+  if (/Safari/i.test(userAgent)) return 'Safari';
+  if (/Firefox/i.test(userAgent)) return 'Firefox';
+  if (/MSIE|Trident/i.test(userAgent)) return 'Internet Explorer';
+  return null;
+}
+
+const resolveOS = (): string | null => {
+  const userAgent = navigator.userAgent;
+  const platform = navigator.platform;
+  if (/Win/i.test(platform)) return 'Windows';
+  if (/Mac/i.test(platform)) return 'macOS';
+  if (/Linux/i.test(platform)) return 'Linux';
+  if (/Android/i.test(userAgent)) return 'Android';
+  if (/iPhone|iPad|iPod/i.test(userAgent)) return 'iOS';
+  return null;
+}
+
 const resolveDeviceFingerPrint = (): string => {
   return deviceIdFingerPrint ?? "";
+}
+
+const resolveSuspiciousActivityVariable = () => {
+  const flags: SuspiciousFlags = suspiciousFlags;
+  let score: number = 0;
+  if (flags.unnaturalMouseMoves) score += 0.25;
+  if (flags.bigClipboardPaste) score += 0.25;
+  if (flags.lowFPSDetected) score += 0.25;
+  if (flags.delayedClickDetected) score += 0.25;
+  return score;
 }
 
 const resolveTriggerVariable = (trackerVariableSchema: TrackerEventVariable, mouseEvent: MouseEvent): string => {
   const elementOption: ElementOption = trackerVariableSchema.selection as ElementOption;
   const parent: Element = document.createElement("div") as Element;
   // @ts-ignore
-  parent.append(mouseEvent.target.cloneNode(true));
+  parent.append(mouseEvent.target?.cloneNode(true));
   const element: Element = parent.querySelector(elementOption.cssSelector) as Element;
   // @ts-ignore
   return element ? elementOption.attribute ? element.getAttribute(elementOption.attribute) : element.innerText : "";
 }
 
 // -----
-const buildEvent = (eventSchema: TrackerEventMapping, trackerVariables: Record<string, any>): TrackerPayload => {
-  const name: string = eventSchema.name;
+const buildEvent = (eventSchema: TrackerSchema, trackerVariables: Record<string, any>): TrackerPayload => {
+  const name: string = eventSchema.event.name;
   const variables: Record<string, any> = {};
-  Object.entries(eventSchema.variableMappings).forEach(([key, value]) => variables[key] = resolveMapping(value, trackerVariables));
+  Object.entries(eventSchema.event.variableMappings).forEach(([key, value]) => variables[key] = resolveMapping(value, trackerVariables));
 
-  return {name, key: variables[eventSchema.keyMapping], variables}
+  return {name, key: variables[eventSchema.event.keyMapping], variables}
 };
 
 const resolveMapping = (mapping: string, trackerVariables: Record<string, any>): string => {
@@ -518,4 +582,33 @@ const findMatches = (string: string, regex: RegExp): string[] => {
   }
 
   return matches;
+}
+
+const isSuspiciousBrowser = async () => {
+  try {
+    if (navigator.webdriver) return true;
+
+    if (!navigator.languages || navigator.languages.length === 0) return true;
+    if (!navigator.plugins || navigator.plugins.length === 0) return true;
+
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    if (!gl) return true;
+    canvas.remove();
+
+    if (navigator.permissions) {
+      const result = await navigator.permissions.query({name: 'notifications'});
+      if (Notification.permission === 'denied' && result.state === 'prompt') {
+        return true;
+      }
+    }
+
+    if (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 1) return true;
+
+    if (/Mobi|Android/i.test(navigator.userAgent) && !('ontouchstart' in window)) return true;
+
+    return false;
+  } catch (e) {
+    return true;
+  }
 }

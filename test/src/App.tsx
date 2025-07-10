@@ -21,8 +21,9 @@ class App extends Component {
     FormicaTracker.initialize(args)
       .then(() => {
         console.log("Tracker initialized");
-        FormicaTracker.triggerCustom("testcustom1", {
-          custom1: "test1",
+        FormicaTracker.triggerCustom("test", {
+          name: "test1",
+          name2: "test1",
         });
       })
       .catch((error) => console.error("Tracker could not initialized", error));
