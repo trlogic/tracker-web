@@ -15,5 +15,5 @@ export enum TrackerTriggerTypeWeb {
   CLICK = "CLICK",
   SCROLL = "SCROLL",
   PAGE_VIEW = "PAGE_VIEW",
-  CUSTOM = "CUSTOM"
+  CUSTOM = "CUSTOM",
 }

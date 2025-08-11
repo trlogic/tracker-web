@@ -1,9 +1,9 @@
-enum TrackerFilterOperator{
-  IS_EQUALS="isEquals",
+enum TrackerFilterOperator {
+  IS_EQUALS = "isEquals",
   IS_EQUALS_IGNORE_CASE = "isEqualsIgnoreCase",
 
   NOT_EQUALS = "notEquals",
-  NOT_EQUALS_IGNORE_CASE ="notEqualsIgnoreCase",
+  NOT_EQUALS_IGNORE_CASE = "notEqualsIgnoreCase",
 
   IS_CONTAINS = "isContains",
   IS_CONTAINS_IGNORE_CASE = "isContainsIgnoreCase",

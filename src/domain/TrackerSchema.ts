@@ -1,6 +1,6 @@
+import TrackerEventMapping from "./TrackerEventMapping";
 import TrackerTrigger from "./trigger/TrackerTrigger";
 import TrackerVariable from "./variable/TrackerVariable";
-import TrackerEventMapping from "./TrackerEventMapping";
 
 interface TrackerSchema {
   name: string;
@@ -12,7 +12,7 @@ interface TrackerSchema {
 
 export enum TrackerPlatform {
   WEB = "WEB",
-  MOBILE = "MOBILE"
+  MOBILE = "MOBILE",
 }
 
 export default TrackerSchema;

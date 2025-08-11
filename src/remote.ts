@@ -1,9 +1,4 @@
-export type SuspiciousFlags = {
-  unnaturalMouseMoves: boolean;
-  bigClipboardPaste: boolean;
-  lowFPSDetected: boolean;
-  delayedClickDetected: boolean;
-};
+import { SuspiciousFlags } from "./domain/suspicious-flags";
 
 type SuspicionCallback = (flags: SuspiciousFlags) => void;
 
@@ -16,7 +11,7 @@ export function monitorRemoteControlSuspicion(onSuspiciousDetected: SuspicionCal
       delayedClickDetected: false,
     };
 
-    const previousFlags: SuspiciousFlags = {...flags};
+    const previousFlags: SuspiciousFlags = { ...flags };
 
     function hasChanged(): boolean {
       return (
@@ -34,22 +29,21 @@ export function monitorRemoteControlSuspicion(onSuspiciousDetected: SuspicionCal
           previousFlags.bigClipboardPaste = flags.bigClipboardPaste;
           previousFlags.lowFPSDetected = flags.lowFPSDetected;
           previousFlags.delayedClickDetected = flags.delayedClickDetected;
-          onSuspiciousDetected({...flags});
+          onSuspiciousDetected({ ...flags });
         }
-      } catch {
-      }
+      } catch {}
     }
 
     let lastX: number | null = null;
     let lastY: number | null = null;
     let unnaturalCount = 0;
 
-    window.addEventListener('mousemove', (e: MouseEvent) => {
+    window.addEventListener("mousemove", (e: MouseEvent) => {
       try {
         if (lastX !== null && lastY !== null) {
           const dx = Math.abs(e.clientX - lastX);
           const dy = Math.abs(e.clientY - lastY);
-          if ((dx > 100 || dy > 100) || (dx === 0 && dy === 0)) unnaturalCount++;
+          if (dx > 100 || dy > 100 || (dx === 0 && dy === 0)) unnaturalCount++;
           if (unnaturalCount > 5 && !flags.unnaturalMouseMoves) {
             flags.unnaturalMouseMoves = true;
             triggerIfChanged();
@@ -57,24 +51,21 @@ export function monitorRemoteControlSuspicion(onSuspiciousDetected: SuspicionCal
         }
         lastX = e.clientX;
         lastY = e.clientY;
-      } catch {
-      }
+      } catch {}
     });
 
-    window.addEventListener('paste', (e: Event) => {
+    window.addEventListener("paste", (e: Event) => {
       try {
         const clipboardEvent = e as ClipboardEvent;
-        const text = clipboardEvent.clipboardData?.getData('text') || '';
+        const text = clipboardEvent.clipboardData?.getData("text") || "";
         if (text.length > 5000 && !flags.bigClipboardPaste) {
           flags.bigClipboardPaste = true;
           triggerIfChanged();
         }
-      } catch {
-
-      }
+      } catch {}
     });
 
-    document.addEventListener('click', () => {
+    document.addEventListener("click", () => {
       try {
         const start = performance.now();
         setTimeout(() => {
@@ -84,11 +75,9 @@ export function monitorRemoteControlSuspicion(onSuspiciousDetected: SuspicionCal
               flags.delayedClickDetected = true;
               triggerIfChanged();
             }
-          } catch {
-          }
+          } catch {}
         }, 0);
-      } catch {
-      }
+      } catch {}
     });
 
     let lastFrame = performance.now();
@@ -104,12 +93,10 @@ export function monitorRemoteControlSuspicion(onSuspiciousDetected: SuspicionCal
           triggerIfChanged();
         }
         lastFrame = now;
-      } catch {
-      }
+      } catch {}
       requestAnimationFrame(monitorFPS);
     }
 
     monitorFPS();
-  } catch {
-  }
+  } catch {}
 }

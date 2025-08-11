@@ -6,7 +6,7 @@ enum DataType {
   OBJECT = "Object",
   ARRAY = "Array",
   UNKNOWN = "Unknown",
-  STRUCTURE = "Structure"
+  STRUCTURE = "Structure",
 }
 
 export default DataType;

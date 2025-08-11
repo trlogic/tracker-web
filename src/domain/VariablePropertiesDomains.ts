@@ -6,9 +6,8 @@ export interface VariablePropertiesModel {
 
 export interface VariableProperties {
   dataType: DataType;
-  dataStructure?: string
+  dataStructure?: string;
 }
-
 
 export interface ArrayVariableProperties extends VariableProperties {
   properties: VariableProperties | ArrayVariableProperties | ObjectVariableProperties | CustomStructureProperties;
@@ -16,7 +15,11 @@ export interface ArrayVariableProperties extends VariableProperties {
 }
 
 export interface ArrayVariablePropertiesModel extends VariablePropertiesModel {
-  properties: VariableProperties | ArrayVariablePropertiesModel | ObjectVariablePropertiesModel | CustomStructureProperties;
+  properties:
+    | VariableProperties
+    | ArrayVariablePropertiesModel
+    | ObjectVariablePropertiesModel
+    | CustomStructureProperties;
   dataType: string;
 }
 

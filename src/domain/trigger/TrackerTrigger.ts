@@ -1,5 +1,5 @@
 import TrackerFilterJsonModel from "../filter/TrackerFilterJsonModel";
-import {TrackerTriggerTypeMobile, TrackerTriggerTypeWeb} from "../TrackerTriggerType";
+import { TrackerTriggerTypeWeb } from "../TrackerTriggerType";
 
 interface TrackerTrigger {
   name: string;
@@ -8,9 +8,8 @@ interface TrackerTrigger {
   option: ClickOption | ScrollOptions | CustomEventOption;
 }
 
-export type ClickOption = { justLinks: boolean }
-export type ScrollOptions = { horizontal: boolean; vertical: boolean; }
+export type ClickOption = { justLinks: boolean };
+export type ScrollOptions = { horizontal: boolean; vertical: boolean };
 export type CustomEventOption = { event: string };
 
-
-export default TrackerTrigger
+export default TrackerTrigger;

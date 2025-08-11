@@ -1,8 +1,6 @@
-import {VariableProperties} from "../VariablePropertiesDomains";
+import { VariableProperties } from "../VariablePropertiesDomains";
 import {
-  CookieOption,
-  JavascriptOption, TrackerVariableWebType, TriggerOption, UrlOption,
-  VisibilityOption
+  TrackerVariableWebType
 } from "./VariableTypeDefinitions";
 
 interface TrackerVariable {
@@ -19,7 +17,7 @@ export interface TrackerUrlVariable extends TrackerVariable {
 
 export interface TrackerElementVariable extends TrackerVariable {
   type: TrackerVariableWebType.ELEMENT;
-  option: ElementOption
+  option: ElementOption;
 }
 
 export interface TrackerCookieVariable extends TrackerVariable {
@@ -42,7 +40,7 @@ export interface TrackerCustomEventVariable extends TrackerVariable {
   type: TrackerVariableWebType.CUSTOM;
 }
 
-export type ElementOption = { cssSelector: string; attribute: string; urlSelection?: URLSelection; }
+export type ElementOption = { cssSelector: string; attribute: string; urlSelection?: URLSelection };
 export type URLSelection = "full" | "host" | "port" | "path" | "query" | "fragment" | "protocol";
 export type HistorySelection = "newUrl" | "oldUrl" | "newState" | "oldState" | "changeSource";
 
