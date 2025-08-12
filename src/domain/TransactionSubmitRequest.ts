@@ -1,7 +1,7 @@
 interface TransactionSubmitRequest {
-  name: string;
-  key: string;
-  variables: Record<string, any>;
+  name:      string;
+  key:       string;
+  variables: Record<string, unknown>;
 }
 
 export default TransactionSubmitRequest;

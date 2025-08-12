@@ -19,12 +19,12 @@ export class VariableResolver {
     private ip: string,
     private deviceFingerprint: string,
     private suspiciousFlags: SuspiciousFlags,
-    private globalVariables: Record<string, unknown>
+    private globalVariables: Record<string, unknown>,
   ) {}
 
   async resolve(
     trackerVariableSchema: TrackerVariable,
-    mouseEvent: MouseEvent
+    mouseEvent: MouseEvent,
   ): Promise<string | number | boolean | Record<string, unknown> | null> {
     switch (trackerVariableSchema.type) {
       case TrackerVariableWebType.URL:
@@ -100,7 +100,7 @@ export class VariableResolver {
       .map((cookie) =>
         trackerVariableSchema.decodeUrlCookie
           ? decodeURIComponent(cookie.substring(cookieName.length + 1))
-          : cookie.substring(cookieName.length + 1)
+          : cookie.substring(cookieName.length + 1),
       );
 
     return cookies[0] ?? "";

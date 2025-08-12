@@ -5,11 +5,15 @@
 export interface HttpRequestConfig {
   headers?: Record<string, string>;
   timeout?: number;
-  method?: "GET" | "POST" | "PUT" | "DELETE";
+  method?:  "GET" | "POST" | "PUT" | "DELETE";
 }
 
 export class HttpError extends Error {
-  constructor(message: string, public status: number, public response?: Response) {
+  constructor(
+    message: string,
+    public status: number,
+    public response?: Response,
+  ) {
     super(message);
     this.name = "HttpError";
   }
@@ -34,7 +38,7 @@ export class HttpClient {
       const fetchConfig: RequestInit = {
         method,
         headers: mergedHeaders,
-        signal: controller.signal,
+        signal:  controller.signal,
       };
 
       if (body && method !== "GET") {

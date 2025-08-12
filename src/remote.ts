@@ -1,13 +1,14 @@
 import { SuspiciousFlags } from "./domain/suspicious-flags";
+import { logger } from "./utils/logger";
 
 type SuspicionCallback = (flags: SuspiciousFlags) => void;
 
 export function monitorRemoteControlSuspicion(onSuspiciousDetected: SuspicionCallback): void {
   try {
     const flags: SuspiciousFlags = {
-      unnaturalMouseMoves: false,
-      bigClipboardPaste: false,
-      lowFPSDetected: false,
+      unnaturalMouseMoves:  false,
+      bigClipboardPaste:    false,
+      lowFPSDetected:       false,
       delayedClickDetected: false,
     };
 
@@ -31,7 +32,9 @@ export function monitorRemoteControlSuspicion(onSuspiciousDetected: SuspicionCal
           previousFlags.delayedClickDetected = flags.delayedClickDetected;
           onSuspiciousDetected({ ...flags });
         }
-      } catch {}
+      } catch (err) {
+        logger.debug("Error while triggering suspicious change callback", err);
+      }
     }
 
     let lastX: number | null = null;
@@ -51,7 +54,9 @@ export function monitorRemoteControlSuspicion(onSuspiciousDetected: SuspicionCal
         }
         lastX = e.clientX;
         lastY = e.clientY;
-      } catch {}
+      } catch (err) {
+        logger.debug("Error in mousemove handler", err);
+      }
     });
 
     window.addEventListener("paste", (e: Event) => {
@@ -62,7 +67,9 @@ export function monitorRemoteControlSuspicion(onSuspiciousDetected: SuspicionCal
           flags.bigClipboardPaste = true;
           triggerIfChanged();
         }
-      } catch {}
+      } catch (err) {
+        logger.debug("Error detecting large clipboard paste", err);
+      }
     });
 
     document.addEventListener("click", () => {
@@ -75,9 +82,13 @@ export function monitorRemoteControlSuspicion(onSuspiciousDetected: SuspicionCal
               flags.delayedClickDetected = true;
               triggerIfChanged();
             }
-          } catch {}
+          } catch (err) {
+            logger.debug("Error evaluating delayed click", err);
+          }
         }, 0);
-      } catch {}
+      } catch (err) {
+        logger.debug("Error scheduling delayed click evaluation", err);
+      }
     });
 
     let lastFrame = performance.now();
@@ -93,10 +104,14 @@ export function monitorRemoteControlSuspicion(onSuspiciousDetected: SuspicionCal
           triggerIfChanged();
         }
         lastFrame = now;
-      } catch {}
+      } catch (err) {
+        logger.debug("Error in FPS monitor", err);
+      }
       requestAnimationFrame(monitorFPS);
     }
 
     monitorFPS();
-  } catch {}
+  } catch (err) {
+    logger.debug("Error initializing remote control suspicion monitor", err);
+  }
 }

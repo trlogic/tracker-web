@@ -38,7 +38,8 @@ export class BrowserDetector {
   }
 
   static getLanguage(): string {
-    return navigator.language || (navigator as any).userLanguage || "";
+    const nav = navigator as Navigator & { userLanguage?: string };
+    return navigator.language || nav.userLanguage || "";
   }
 
   static getTimezone(): string {
@@ -135,23 +136,23 @@ export class BrowserDetector {
   static getDetailedInfo() {
     return {
       browser: {
-        name: this.getBrowser(),
+        name:    this.getBrowser(),
         version: this.getBrowserVersion(),
       },
       os: {
-        name: this.getOS(),
+        name:    this.getOS(),
         version: this.getOSVersion(),
       },
       platform: {
-        type: this.getPlatform(),
+        type:      this.getPlatform(),
         isDesktop: this.isDesktop(),
-        isMobile: this.isMobile(),
-        isTablet: this.isTablet(),
+        isMobile:  this.isMobile(),
+        isTablet:  this.isTablet(),
       },
-      engine: this.getEngine(),
+      engine:   this.getEngine(),
       language: this.getLanguage(),
       timezone: this.getTimezone(),
-      isBot: this.isBot(),
+      isBot:    this.isBot(),
     };
   }
 }

@@ -5,13 +5,13 @@ export interface VariablePropertiesModel {
 }
 
 export interface VariableProperties {
-  dataType: DataType;
+  dataType:       DataType;
   dataStructure?: string;
 }
 
 export interface ArrayVariableProperties extends VariableProperties {
   properties: VariableProperties | ArrayVariableProperties | ObjectVariableProperties | CustomStructureProperties;
-  dataType: DataType;
+  dataType:   DataType;
 }
 
 export interface ArrayVariablePropertiesModel extends VariablePropertiesModel {
@@ -36,22 +36,22 @@ export interface DateVariablePropertiesModel extends VariablePropertiesModel {
 }
 
 export interface EntryProperties {
-  name: string;
+  name:        string;
   description: string | undefined;
-  properties: VariableProperties | ArrayVariableProperties | ObjectVariableProperties;
+  properties:  VariableProperties | ArrayVariableProperties | ObjectVariableProperties;
 }
 
 export interface ObjectVariableProperties extends VariableProperties {
-  variables: Array<EntryProperties>;
-  dataType: DataType;
+  variables: EntryProperties[];
+  dataType:  DataType;
 }
 
 export interface ObjectVariablePropertiesModel extends VariablePropertiesModel {
-  variables: Array<EntryPropertiesModel>;
-  dataType: string;
+  variables: EntryPropertiesModel[];
+  dataType:  string;
 }
 
 export interface EntryPropertiesModel {
-  name: string;
+  name:       string;
   properties: VariableProperties | ArrayVariableProperties | ObjectVariableProperties;
 }

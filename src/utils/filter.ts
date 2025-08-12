@@ -29,9 +29,9 @@ export type FilterOperator =
   | "greaterThanOrEquals";
 
 export interface Filter {
-  left: string;
+  left:     string;
   operator: FilterOperator;
-  right: string;
+  right:    string;
 }
 
 export class FilterCalculator {

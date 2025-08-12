@@ -6,10 +6,10 @@ import { TrackerPayload } from "src/types/tracker";
 import { HttpClient } from "src/utils/http";
 
 export class EventQueue {
-  private queue: TrackerPayload[] = [];
-  private httpClient: HttpClient;
-  private tenant: string;
-  private apiUrl: string;
+  private queue:              TrackerPayload[] = [];
+  private httpClient:         HttpClient;
+  private tenant:             string;
+  private apiUrl:             string;
   private processingInterval: number | null = null;
 
   constructor(tenant: string, apiUrl: string) {

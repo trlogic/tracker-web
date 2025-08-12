@@ -1,6 +1,6 @@
 import TrackerSchema from "./TrackerSchema";
 
 export interface TrackerConfigResponse {
-  configs: TrackerSchema[];
+  configs:           TrackerSchema[];
   transactionApiUrl: string;
 }

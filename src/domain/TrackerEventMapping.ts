@@ -1,6 +1,6 @@
 interface TrackerEventMapping {
-  name: string;
-  keyMapping: string;
+  name:             string;
+  keyMapping:       string;
   variableMappings: Record<string, string>;
 }
 

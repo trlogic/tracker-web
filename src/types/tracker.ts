@@ -5,20 +5,20 @@
 import TrackerSchema from "src/domain/TrackerSchema";
 
 export interface TrackerPayload {
-  name: string;
-  key: string;
+  name:      string;
+  key:       string;
   variables: Record<string, unknown>;
 }
 
 export interface TrackerResponse {
   transactionApiUrl: string;
-  configs: TrackerSchema[];
+  configs:           TrackerSchema[];
 }
 
 export interface TrackerInitializeArgs {
   serviceUrl: string;
   tenantName: string;
-  apiKey: string;
+  apiKey:     string;
 }
 
 export interface TrackerRequestConfig {
@@ -27,17 +27,17 @@ export interface TrackerRequestConfig {
 
 export interface TrackerConfig {
   trackers: TrackerSchema[];
-  apiUrl: string;
+  apiUrl:   string;
 }
 
 export interface TrackerState {
-  tenant: string;
-  serviceUrl: string;
-  apiKey: string;
-  ip?: string;
+  tenant:               string;
+  serviceUrl:           string;
+  apiKey:               string;
+  ip?:                  string;
   deviceIdFingerPrint?: string;
-  previousHref?: string;
-  timerInstance?: number;
+  previousHref?:        string;
+  timerInstance?:       number;
 }
 
 export interface GlobalVariables {

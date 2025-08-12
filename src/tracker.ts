@@ -25,21 +25,21 @@ import { VariableResolver } from "./services/variable-resolver";
 import {
   GlobalVariables,
   TrackerConfig,
-  TrackerInitializeArgs,
+  TrackerInitializeArgs as TrackerInitializeArgsType,
   TrackerPayload,
-  TrackerRequestConfig,
+  TrackerRequestConfig as TrackerRequestConfigType,
   TrackerState,
 } from "./types/tracker";
 
 class FormicaTracker {
   private state: TrackerState = {
-    tenant: "",
+    tenant:     "",
     serviceUrl: "",
-    apiKey: "",
+    apiKey:     "",
   };
 
   private config: TrackerConfig = {
-    apiUrl: "",
+    apiUrl:   "",
     trackers: [],
   };
 
@@ -48,16 +48,16 @@ class FormicaTracker {
   };
 
   private suspiciousFlags: SuspiciousFlags = {
-    unnaturalMouseMoves: false,
-    bigClipboardPaste: false,
-    lowFPSDetected: false,
+    unnaturalMouseMoves:  false,
+    bigClipboardPaste:    false,
+    lowFPSDetected:       false,
     delayedClickDetected: false,
   };
 
-  private eventQueue?: EventQueue;
-  private timerService: TimerService = new TimerService();
+  private eventQueue?:          EventQueue;
+  private timerService:         TimerService = new TimerService();
   private trackerConfigService: TrackerConfigService = new TrackerConfigService();
-  private variableResolver?: VariableResolver;
+  private variableResolver?:    VariableResolver;
 
   /**
    * Initialize the tracker with configuration
@@ -99,7 +99,7 @@ class FormicaTracker {
   async triggerCustomSync(
     name: string,
     variables: Record<string, unknown>,
-    config?: TrackerRequestConfig
+    config?: TrackerRequestConfig,
   ): Promise<TransactionResult | null> {
     try {
       const payload = await this.buildCustomTriggerPayload(name, variables);
@@ -153,7 +153,7 @@ class FormicaTracker {
     const { trackers, apiUrl } = await this.trackerConfigService.getTrackers(
       this.state.serviceUrl,
       this.state.tenant,
-      this.state.apiKey
+      this.state.apiKey,
     );
 
     this.config = { trackers, apiUrl };
@@ -173,7 +173,7 @@ class FormicaTracker {
       this.state.ip || "",
       this.state.deviceIdFingerPrint || "",
       this.suspiciousFlags,
-      this.globalVariables
+      this.globalVariables,
     );
 
     // Start timer
@@ -224,7 +224,7 @@ class FormicaTracker {
 
       observer.observe(bodyElement, {
         childList: true,
-        subtree: true,
+        subtree:   true,
       });
     });
   }
@@ -263,7 +263,7 @@ class FormicaTracker {
 
   private async buildCustomTriggerPayload(
     name: string,
-    variables: Record<string, unknown>
+    variables: Record<string, unknown>,
   ): Promise<TrackerPayload | null> {
     if (!this.variableResolver) return null;
 
@@ -271,7 +271,7 @@ class FormicaTracker {
       const event = tracker.triggers.find(
         (t) =>
           t.type === TrackerTriggerTypeWeb.CUSTOM &&
-          ((t.option as CustomEventOption)?.event === name || t.name === name)
+          ((t.option as CustomEventOption)?.event === name || t.name === name),
       );
 
       if (!event) continue;
@@ -297,17 +297,22 @@ class FormicaTracker {
 // Export singleton instance
 const formicaTracker = new FormicaTracker();
 
-// Export namespace with types for backward compatibility
-namespace TrackerManager {
-  export type TrackerInitializeArgs = import("./types/tracker").TrackerInitializeArgs;
-  export type TrackerRequestConfig = import("./types/tracker").TrackerRequestConfig;
+export type TrackerInitializeArgs = TrackerInitializeArgsType;
+export type TrackerRequestConfig = TrackerRequestConfigType;
 
-  export const initialize = formicaTracker.initialize.bind(formicaTracker);
-  export const triggerCustom = formicaTracker.triggerCustom.bind(formicaTracker);
-  export const triggerCustomSync = formicaTracker.triggerCustomSync.bind(formicaTracker);
-  export const setUserDefinedVariable = formicaTracker.setUserDefinedVariable.bind(formicaTracker);
-  export const getUserDefinedVariable = formicaTracker.getUserDefinedVariable.bind(formicaTracker);
-  export const getUserDefinedVariables = formicaTracker.getUserDefinedVariables.bind(formicaTracker);
+// eslint-disable-next-line @typescript-eslint/no-namespace
+namespace TrackerManager {
+  export type TrackerInitializeArgs = TrackerInitializeArgsType;
+  export type TrackerRequestConfig = TrackerRequestConfigType;
 }
+
+const TrackerManager = {
+  initialize:              formicaTracker.initialize.bind(formicaTracker),
+  triggerCustom:           formicaTracker.triggerCustom.bind(formicaTracker),
+  triggerCustomSync:       formicaTracker.triggerCustomSync.bind(formicaTracker),
+  setUserDefinedVariable:  formicaTracker.setUserDefinedVariable.bind(formicaTracker),
+  getUserDefinedVariable:  formicaTracker.getUserDefinedVariable.bind(formicaTracker),
+  getUserDefinedVariables: formicaTracker.getUserDefinedVariables.bind(formicaTracker),
+};
 
 export default TrackerManager;

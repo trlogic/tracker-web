@@ -3,11 +3,11 @@ import TrackerTrigger from "./trigger/TrackerTrigger";
 import TrackerVariable from "./variable/TrackerVariable";
 
 interface TrackerSchema {
-  name: string;
-  platform: TrackerPlatform;
-  triggers: Array<TrackerTrigger>;
-  variables: Array<TrackerVariable>;
-  event: TrackerEventMapping;
+  name:      string;
+  platform:  TrackerPlatform;
+  triggers:  TrackerTrigger[];
+  variables: TrackerVariable[];
+  event:     TrackerEventMapping;
 }
 
 export enum TrackerPlatform {

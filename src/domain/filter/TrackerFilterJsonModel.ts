@@ -1,9 +1,9 @@
 import TrackerFilterOperator from "./TrackerFilterOperator";
 
 interface TrackerFilterJsonModel {
-  field: string;
+  field:    string;
   operator: TrackerFilterOperator;
-  value: string;
+  value:    string;
 }
 
 export default TrackerFilterJsonModel;

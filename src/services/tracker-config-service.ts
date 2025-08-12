@@ -16,16 +16,16 @@ export class TrackerConfigService {
   async getTrackers(
     serviceUrl: string,
     tenant: string,
-    apiKey: string
+    apiKey: string,
   ): Promise<{ trackers: TrackerSchema[]; apiUrl: string }> {
     const apiUrl = `${serviceUrl}/sentinel/v1`;
 
     const config = await this.httpClient.get<TrackerResponse>(apiUrl, {
       headers: {
         tenant,
-        "api-key": apiKey,
+        "api-key":      apiKey,
         "Content-Type": "application/json",
-        platform: "web",
+        platform:       "web",
       },
     });
 

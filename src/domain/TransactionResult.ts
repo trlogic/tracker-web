@@ -1,26 +1,26 @@
 export interface TransactionResult {
-  id: string;
-  fraud: TransactionRiskDetail;
+  id:         string;
+  fraud:      TransactionRiskDetail;
   compliance: TransactionRiskDetail;
-  failures: TransactionFailure[];
+  failures:   TransactionFailure[];
 }
 
 export interface TransactionRiskDetail {
   resolution: "APPROVED" | "ESCALATED" | "DECLINED";
-  score: number;
-  rules: RuleResult[];
+  score:      number;
+  rules:      RuleResult[];
 }
 
 export interface RuleResult {
-  name: string;
+  name:       string;
   resolution: "APPROVED" | "ESCALATED" | "DECLINED";
-  score: number;
-  attachment: Record<string, any>;
+  score:      number;
+  attachment: Record<string, unknown>;
 }
 
 export interface TransactionFailure {
-  type: string;
-  name: string;
-  code: number;
+  type:        string;
+  name:        string;
+  code:        number;
   description: string;
 }
