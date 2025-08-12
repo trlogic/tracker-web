@@ -16,4 +16,5 @@ export enum TrackerTriggerTypeWeb {
   SCROLL = "SCROLL",
   PAGE_VIEW = "PAGE_VIEW",
   CUSTOM = "CUSTOM",
+  RISK_ALERT = "RISK_ALERT",
 }

@@ -13,6 +13,7 @@ import TrackerVariable, {
 } from "src/domain/variable/TrackerVariable";
 import { TrackerVariableWebType } from "src/domain/variable/VariableTypeDefinitions";
 import { BrowserDetector } from "src/utils/browser-detector";
+import { EnvironmentChangeFlags, riskMetricsService } from "./risk-metrics";
 
 export class VariableResolver {
   constructor(
@@ -55,6 +56,68 @@ export class VariableResolver {
         return BrowserDetector.getBrowser();
       case TrackerVariableWebType.CUSTOM:
         return this.resolveCustomVariable(trackerVariableSchema as TrackerCustomEventVariable);
+      case TrackerVariableWebType.SCREEN_RESOLUTION:
+        return `${window.screen.width}x${window.screen.height}`;
+      case TrackerVariableWebType.USER_AGENT:
+        return navigator.userAgent;
+      case TrackerVariableWebType.NO_MOUSE_MOVE_DURATION_MS:
+      case TrackerVariableWebType.CLICK_ONLY_PATTERN:
+      case TrackerVariableWebType.FAST_PAGE_TRANSITION:
+      case TrackerVariableWebType.FORM_FILL_ANOMALY:
+      case TrackerVariableWebType.FORM_FILL_DURATION_MS:
+      case TrackerVariableWebType.NAVIGATION_VELOCITY:
+      case TrackerVariableWebType.INPUT_PASTE_RATIO:
+      case TrackerVariableWebType.REMOTE_ACCESS_SCORE:
+      case TrackerVariableWebType.REMOTE_ACCESS_FLAGS_JSON:
+      case TrackerVariableWebType.ENVIRONMENT_CHANGE_FLAGS:
+      case TrackerVariableWebType.ENVIRONMENT_CHANGE_SCORE:
+      case TrackerVariableWebType.HEADLESS_INDICATOR_COUNT:
+        return this.resolveRiskVariable(trackerVariableSchema.type) as
+          | string
+          | number
+          | boolean
+          | Record<string, unknown>
+          | null;
+      default:
+        return "";
+    }
+  }
+
+  private resolveRiskVariable(type: TrackerVariableWebType): unknown {
+    const agg = riskMetricsService.getAggregates();
+    const env = window as unknown as {
+      __formicaEnvChange?:          { flags: EnvironmentChangeFlags; score: number };
+      __formicaHeadlessIndicators?: number;
+      __formicaSuspiciousFlags?:    SuspiciousFlags;
+      __formicaRemoteAccessScore?:  number;
+      __formicaRemoteAccessFlags?:  Record<string, unknown>;
+    };
+
+    switch (type) {
+      case TrackerVariableWebType.NO_MOUSE_MOVE_DURATION_MS:
+        return agg.noMouseMoveDurationMs;
+      case TrackerVariableWebType.CLICK_ONLY_PATTERN:
+        return agg.clickOnlyPattern;
+      case TrackerVariableWebType.FAST_PAGE_TRANSITION:
+        return agg.fastPageTransition;
+      case TrackerVariableWebType.FORM_FILL_ANOMALY:
+        return agg.formFillAnomaly;
+      case TrackerVariableWebType.FORM_FILL_DURATION_MS:
+        return agg.formFillDurationMs;
+      case TrackerVariableWebType.NAVIGATION_VELOCITY:
+        return agg.navigationVelocity;
+      case TrackerVariableWebType.INPUT_PASTE_RATIO:
+        return agg.inputPasteRatio;
+      case TrackerVariableWebType.ENVIRONMENT_CHANGE_FLAGS:
+        return env.__formicaEnvChange?.flags ? JSON.stringify(env.__formicaEnvChange.flags) : "{}";
+      case TrackerVariableWebType.ENVIRONMENT_CHANGE_SCORE:
+        return env.__formicaEnvChange?.score ?? 0;
+      case TrackerVariableWebType.HEADLESS_INDICATOR_COUNT:
+        return env.__formicaHeadlessIndicators ?? 0;
+      case TrackerVariableWebType.REMOTE_ACCESS_FLAGS_JSON:
+        return env.__formicaRemoteAccessFlags ? JSON.stringify(env.__formicaRemoteAccessFlags) : "{}";
+      case TrackerVariableWebType.REMOTE_ACCESS_SCORE:
+        return env.__formicaRemoteAccessScore ?? 0;
       default:
         return "";
     }

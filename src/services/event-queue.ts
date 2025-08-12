@@ -4,6 +4,7 @@
 
 import { TrackerPayload } from "src/types/tracker";
 import { HttpClient } from "src/utils/http";
+import { logger } from "src/utils/logger";
 
 export class EventQueue {
   private queue:              TrackerPayload[] = [];
@@ -56,7 +57,7 @@ export class EventQueue {
           headers: { tenant: this.tenant },
         });
       } catch (error) {
-        console.error("Failed to send event:", error);
+        logger.error("Failed to send event:", error);
         // Re-add the event to the queue for retry
         this.queue.unshift(event);
         break;

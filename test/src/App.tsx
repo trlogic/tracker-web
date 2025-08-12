@@ -9,7 +9,7 @@ export default function App() {
   const handleTriggerCustomEvent = useCallback(() => {
     console.log("Triggering custom event", eventName);
     FormicaTracker.triggerCustom(eventName, {
-      name: "test1",
+      name:  "test1",
       name2: "test1",
     });
   }, [eventName]);
@@ -18,7 +18,7 @@ export default function App() {
     const args: FormicaTracker.TrackerInitializeArgs = {
       serviceUrl: process.env.REACT_APP_API_URL,
       tenantName: process.env.REACT_APP_TENANT,
-      apiKey: process.env.REACT_APP_API_KEY,
+      apiKey:     process.env.REACT_APP_API_KEY,
     };
     FormicaTracker.initialize(args)
       .then(() => {
@@ -41,6 +41,8 @@ export default function App() {
           ))}
         </select>
         <button onClick={handleTriggerCustomEvent}>Trigger Custom Event</button>
+
+        <a href="#">Test Link</a>
       </div>
     </main>
   );
