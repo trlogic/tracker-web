@@ -81,20 +81,36 @@ export class FilterCalculator {
       case "greaterThanOrEquals":
         return Number.parseFloat(leftValue) >= Number.parseFloat(rightValue);
       case "isRegexMatch": {
-        const result = new RegExp(rightValue, "g").exec(leftValue);
-        return result !== null && result.length > 0;
+        try {
+          const result = new RegExp(rightValue, "g").exec(leftValue);
+          return result !== null && result.length > 0;
+        } catch {
+          return false;
+        }
       }
       case "isRegexMatchIgnoreCase": {
-        const result = new RegExp(rightValue, "gi").exec(leftValue);
-        return result !== null && result.length > 0;
+        try {
+          const result = new RegExp(rightValue, "gi").exec(leftValue);
+          return result !== null && result.length > 0;
+        } catch {
+          return false;
+        }
       }
       case "notRegexMatch": {
-        const result = new RegExp(rightValue, "g").exec(leftValue);
-        return !(result !== null && result.length > 0);
+        try {
+          const result = new RegExp(rightValue, "g").exec(leftValue);
+          return !(result !== null && result.length > 0);
+        } catch {
+          return false;
+        }
       }
       case "notRegexMatchIgnoreCase": {
-        const result = new RegExp(rightValue, "gi").exec(leftValue);
-        return !(result !== null && result.length > 0);
+        try {
+          const result = new RegExp(rightValue, "gi").exec(leftValue);
+          return !(result !== null && result.length > 0);
+        } catch {
+          return false;
+        }
       }
       default:
         return false;

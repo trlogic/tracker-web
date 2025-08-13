@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "jsx": "react",
+    "target": "ES2019",
+    "module": "esnext",
+    "strict": true,
+    "noUnusedParameters": true,
+    "lib": ["dom", "esnext"],
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "types": ["node"],
+    "paths": {
+      "src/*": ["./src/*"],
+      "@/*": ["./src/*"]
+    }
+  }
+}
